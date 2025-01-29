@@ -152,3 +152,38 @@ returning a Collection will populate the dropdown:
 ```
 
 ![alt text](https://github.com/ziffmedia/nova-select-plus/raw/master/docs/6-ajaxSearchable.gif "reorder a list")
+
+## Validation
+
+To make sure that the user has selected at least one option, you can utilize the `required` rule in combination with a custom validation rule. Since the data is sent back as form data, the value of your field will always be a JSON string of an empty array. Therefore, the traditional `required` rule will not actually validate the field as containing an entry. It will however add the red asterisk to the field, which tells the user it is required.
+
+First create the custom validation rule:
+
+```bash
+php artisan make:rule RequiredSelectField
+```
+
+Then in your resource, add the following to your field:
+
+```php
+SelectPlus::make('States Visited', 'statesVisited', State::class)
+    ->rules(['required', new RequiredSelectField()])
+
+// This will also add the asterisk to the field
+SelectPlus::make('States Visited', 'statesVisited', State::class)
+    ->required()
+    ->rules([new RequiredSelectField()])
+```
+
+Your rule should contain the following logic:
+
+```php
+public function validate(string $attribute, mixed $value, Closure $fail): void
+{
+    if (empty(json_decode($value))) {
+        $fail("The {$attribute} field is required.");
+    }
+}
+```
+
+This way, if the field doesn't contain any selections, the validation will fail.
